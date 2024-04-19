@@ -19,35 +19,52 @@
   i wanted a system that could alert me to the loss of a connection.
 */
 
-int ledPin = 9;        // Red LED connected to digital pin 9
-int buzzerPin = 12;    // Buzzer connected to digital pin 12
-int greenLedPin = 8;   // Green LED connected to digital pin 8
+int redLedPin = 9;        // Red LED connected to digital pin 9
+int buzzerPin = 12;       // Buzzer connected to digital pin 12
+int greenLedPin = 8;      // Green LED connected to digital pin 8
+int yellowLedPin = 11;    // Yellow LED connected to digital pin 11
 bool alertState = false;  // State to track whether the alert should be active
+unsigned long lastHeartbeat = 0;  // Timestamp of the last heartbeat
+unsigned long heartbeatInterval = 10000;  // Interval to wait for next heartbeat (10 seconds)
 
 void setup() {
-  pinMode(ledPin, OUTPUT);       // Set the red LED pin as an output
-  pinMode(buzzerPin, OUTPUT);    // Set the buzzer pin as an output
-  pinMode(greenLedPin, OUTPUT);  // Set the green LED pin as an output
-  Serial.begin(9600);            // Initialize serial communication at 9600 bits per second
+  pinMode(redLedPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(greenLedPin, OUTPUT);
+  pinMode(yellowLedPin, OUTPUT);   // Initialize yellow LED as an output
+  Serial.begin(9600);              // Initialize serial communication at 9600 bits per second
+  digitalWrite(greenLedPin, HIGH); // Default state for green LED is ON
 }
 
 void loop() {
-  if (Serial.available() > 0) {   // Check if data is available to read
-    char signal = Serial.read();  // Read the incoming byte
-    alertState = (signal == '1');
+  if (Serial.available() > 0) {
+    char signal = Serial.read();
+    lastHeartbeat = millis();  // Update the last heartbeat timestamp on any signal
+
+    switch(signal) {
+      case '0':
+        digitalWrite(redLedPin, LOW);
+        digitalWrite(buzzerPin, LOW);
+        digitalWrite(greenLedPin, HIGH);
+        alertState = false;
+        break;
+      case '1':
+        digitalWrite(greenLedPin, LOW);
+        digitalWrite(redLedPin, HIGH);
+        digitalWrite(buzzerPin, HIGH);
+        alertState = true;
+        break;
+    }
   }
 
-  if (alertState) {
-    digitalWrite(greenLedPin, LOW);   // Ensure the green LED is off when alert is active
-    digitalWrite(ledPin, HIGH);       // Turn the red LED on
-    digitalWrite(buzzerPin, HIGH);    // Turn the buzzer on
-    delay(500);                       // Blink interval of 500 milliseconds
-    digitalWrite(ledPin, LOW);        // Turn the red LED off
-    digitalWrite(buzzerPin, LOW);     // Turn the buzzer off
-    delay(500);                       // Blink interval of 500 milliseconds
+  // Check if the heartbeat is missing
+  if (millis() - lastHeartbeat > heartbeatInterval && !alertState) {
+    // Blink the yellow LED if no heartbeat received
+    digitalWrite(yellowLedPin, HIGH);
+    delay(500);
+    digitalWrite(yellowLedPin, LOW);
+    delay(500);
   } else {
-    digitalWrite(greenLedPin, HIGH);  // Turn the green LED on when connection is stable
-    digitalWrite(ledPin, LOW);        // Ensure the red LED is off
-    digitalWrite(buzzerPin, LOW);     // Ensure the buzzer is off
+    digitalWrite(yellowLedPin, LOW);
   }
 }
