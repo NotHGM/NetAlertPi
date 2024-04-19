@@ -11,7 +11,7 @@ def ping(host):
     return response == 0
 
 # List of hosts to monitor (primary and failover servers)
-hosts = ["8.8.8.8", "1.1.1.1", "208.67.222.222" ]
+hosts = ["8.8.8.8", "1.1.1.1"]
 
 while True:
     connection_found = False
@@ -26,5 +26,9 @@ while True:
     else:
         ser.write(b'1')  # Signal Arduino to activate alert
         print("Connection lost! Alert activated.")
+
+    # Send a heartbeat signal indicating the script is running
+    ser.write(b'2')
+    print("Heartbeat sent.")
 
     time.sleep(7)  # Check every 7 seconds
