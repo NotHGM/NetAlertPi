@@ -31,9 +31,18 @@ void setup() {
   pinMode(redLedPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
   pinMode(greenLedPin, OUTPUT);
-  pinMode(yellowLedPin, OUTPUT);   // Initialize yellow LED as an output
-  Serial.begin(9600);              // Initialize serial communication at 9600 bits per second
+  pinMode(yellowLedPin, OUTPUT);
+  Serial.begin(9600);
   digitalWrite(greenLedPin, HIGH); // Default state for green LED is ON
+}
+
+void blinkAlert() {
+  digitalWrite(redLedPin, HIGH);
+  digitalWrite(buzzerPin, HIGH);
+  delay(500);  // Duration of the alert being ON
+  digitalWrite(redLedPin, LOW);
+  digitalWrite(buzzerPin, LOW);
+  delay(500);  // Duration of the alert being OFF
 }
 
 void loop() {
@@ -41,25 +50,21 @@ void loop() {
     char signal = Serial.read();
     lastHeartbeat = millis();  // Update the last heartbeat timestamp on any signal
 
-    switch(signal) {
-      case '0':
-        digitalWrite(redLedPin, LOW);
-        digitalWrite(buzzerPin, LOW);
-        digitalWrite(greenLedPin, HIGH);
-        alertState = false;
-        break;
-      case '1':
-        digitalWrite(greenLedPin, LOW);
-        digitalWrite(redLedPin, HIGH);
-        digitalWrite(buzzerPin, HIGH);
-        alertState = true;
-        break;
+    if (signal == '0' || signal == '1') {
+      alertState = (signal == '1');
     }
   }
 
-  // Check if the heartbeat is missing
+  if (alertState) {
+    blinkAlert(); // Call blinkAlert function to manage alert blinking
+  } else {
+    digitalWrite(greenLedPin, HIGH); // Ensure the green LED is ON when no alert
+    digitalWrite(redLedPin, LOW);
+    digitalWrite(buzzerPin, LOW);
+  }
+
+  // Check if the heartbeat is missing and no alert is active
   if (millis() - lastHeartbeat > heartbeatInterval && !alertState) {
-    // Blink the yellow LED if no heartbeat received
     digitalWrite(yellowLedPin, HIGH);
     delay(500);
     digitalWrite(yellowLedPin, LOW);
@@ -68,3 +73,4 @@ void loop() {
     digitalWrite(yellowLedPin, LOW);
   }
 }
+
